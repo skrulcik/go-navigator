@@ -33,6 +33,7 @@ echo ". $(pwd)/go" >> ~/.bashrc
 
 ```bash
 go [dest]
+go [-h,--help]";
 ```
 
 The `dest` given to `go` can be one of the following:

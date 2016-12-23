@@ -8,19 +8,45 @@
 #
 
 function go() {
-    USAGE="Usage:\n\tgo [dest]"
-    NOT_FOUND="Directory $@ not found. If it is not spelled incorrectly, consider using its absolute path."
+
+    USAGE="Usage:
+    go [dest]
+    go [-h,--help]";
+    # go [-a,--add] linkname /full/path/to/dest
+    # go [-r,--remove] linkname
+
+    HELP="
+    [dest] can be empty, a relative or local path, a pre-defined shortcut in
+    $GO_SHORTCUT_DIR, or the name of a recently visited directory.
+
+    More information can be found at https://github.com/skrulcik/go-navigator"
+
+    NOT_FOUND="Directory $@ not found. If it is not spelled incorrectly, consider using its absolute path.";
+
     # Default shortcut location ("dirname ~/." gets absolute home path)
-    DEFAULT_GO_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts"
+    DEFAULT_GO_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
 
-
-    # No more than 1 argument is allowed
-    if [[ $# > 1 ]];
+    ############################################################################
+    # Argument parsing, --help, --add and --delete options
+    ############################################################################
+    if [[ $# > 0 ]];
     then
-        echo "$USAGE";
-        return -1;
-    fi
+        # Allow the user to explicitly ask for help
+        if [ "$1" = "--help" -o "$1" = "-h" ];
+        then
+            echo "$USAGE";
+            echo "$HELP";
+            return 0;
+        fi
 
+        # If no options are given, there should not be more than one argument
+        # passed to the go function
+        if [[ $# > 1 ]];
+        then
+            >&2 echo "$USAGE";
+            return -1;
+        fi
+    fi
 
 
     ############################################################################
