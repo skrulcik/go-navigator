@@ -38,12 +38,15 @@ go [dest]
 The `dest` given to `go` can be one of the following:
 
 1. Nothing
+
     If no destination is given, `go` changes the current directory to the home
     directory (same as `cd`).
 2. Pathname
+
     Both relative and absolute pathnames are accepted by `go`, and will be
     navigated to the same way that `cd` navigates to them.
 3. Shortcut
+
     If a name does not resolve to an absolute or relative path, `go` will check
     if the name matches a shortcut. If a matching shortcut is found, the current
     directory is set to the directory the shortcut points to<a
