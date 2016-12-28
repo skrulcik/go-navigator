@@ -31,13 +31,15 @@ function go() {
     ############################################################################
     if [[ $# > 0 ]];
     then
+        case "$1" in
+
         # Allow the user to explicitly ask for help
-        if [ "$1" = "--help" -o "$1" = "-h" ];
-        then
+        "--help" | "-h")
             echo "$USAGE";
             echo "$HELP";
             return 0;
-        fi
+        ;;
+        esac
 
         # If no options are given, there should not be more than one argument
         # passed to the go function
@@ -56,7 +58,9 @@ function go() {
     2>/dev/null cd "$@";
     if [ "$?" = "0" ];
     then
-        # Regular cd succeeded, return success
+        # Regular cd succeeded, print location information then return success
+        pwd;
+        ls;
         return 0;
     fi
 
