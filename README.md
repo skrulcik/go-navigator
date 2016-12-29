@@ -1,20 +1,25 @@
 # `go`
 
-`go` is a smarter way to move between directories. It makes navigating across
-branches of the file tree painless, especially to your most popular folders.
-Combining classic `cd` behavior with user-defined shortcuts and inferences based
-on historic choices means you'll (almost) always end up exactly where you want.
+`go` is a smarter way to move between directories. Just type the name of the
+folder you want, and `go` will almost always bring your there, even if it has to
+jump across the file tree.
 
-The three different methods that `go` uses to determine a destination directory,
+The four different methods that `go` uses to determine a destination directory,
 are, in order of preference:
 
 1. `cd` - If you just want to `cd` somewhere, `go` will follow the path
    appropriately.
 2. Shortcuts - Custom shortcuts (symbolic links) stored in the ~/.go_links
    allow you to navigate to tricky places with minimal keystrokes.
-3. Most Recent [Coming Soon] - Navigate to the most recent directory with the
-   given name. This allows you to navigate _across_ the file system tree as
-   easily as you move up and down it.
+3. Most Recent - Navigate to the most recently visited directory with the same
+   base name as the one given. This acts as a cache, making it extremely
+   efficient to access your most frequently used directories.
+4. Depth-limited Search [Experimental] - Search through top-level directories
+   starting from the home folder, and continuing at folder depths of 1-4. This
+   is a very slow search method, but will find almost any folder. Once the
+   folder is found, it will be added to the history, making future accesses
+   faster. _Feedback on the usefulness of this feature, compared to its slow
+   speed, is appreciated._
 
 ## Installation
 
@@ -33,7 +38,10 @@ echo ". $(pwd)/go" >> ~/.bashrc
 
 ```bash
 go [dest]
-go [-h,--help]";
+go [-h,--help]
+go [-a,--add] linkname destpath
+go [-r,--remove] linkname
+go [-l,--list]";
 ```
 
 The `dest` given to `go` can be one of the following:
@@ -55,37 +63,54 @@ The `dest` given to `go` can be one of the following:
 
     If a shortcut is found, but the link is broken, the shortcut will be deleted
     to avoid future false positives.
-4. Indirect Folder Name
-    _Coming Soon!_
+4. Folder Base Name
 
     When a name that cannot be evaluated as a relative path, absolute path, or
-    shortcut is given, `go` will attempt to find a recent directory that was
-    navigated to. Example:
+    shortcut is given, `go` will attempt to find a directory with the given
+    name. This base name should either correspond to a recent directory
 
-    ```bash
-    $ go 15410
-    go: 15410: Directory not found.
-    $ go ~/Documents/Courses/15410
-    $ go ~
-    $ go 1540 # Goes to ~/Documents/Courses/15410
-    ```
 
-## Saving Shortcuts
+### Recent Directory Example
+
+In case there is confusion about the recently visited directory behavior, the
+following is a use case showing a directory that is visited often, but that is
+deep in the file tree:
+
+```bash
+$ go notes
+go: notes: Directory not found.
+$ go ~/Documents/CMU/F16/15410/notes
+$ go # Goes to ~
+$ go notes # Goes to ~/Documents/CMU/F16/15410/notes
+```
+
+## Shortcut Management
 
 Shortcuts are stored in the form of [symbolic links](https://en.wikipedia.org/wiki/Symbolic_link#POSIX_and_Unix-like_operating_systems).
 For now, `go` only looks for shortcuts in one directory. By default this
 directory is `~/.go_shortcuts`, but it can be set by exporting a new
 global `GO_SHORTCUT_DIR` in your `.bashrc` (or similar login file).
 
-```bash
+To save you from having to manipulate these directories yourself, `go` has
+`--add|-a` and `--remove|-r` subcommands to add and remove shortcuts,
+respectively<a href="foot-3"><sup>3</sup></a>:
+
+```
 # Adding a shortcut
-$ ln -s /Users/Scott/Documents/Courses/15410 ~/.go_shortcuts/os
-$ go os # Goes to /Users/Scott/Documents/Courses/15410
+$ go --add os ~/Documents/CMU/F16/15410
+$ go os # Goes to /Users/Scott/Documents/CMU/F16/15410
 
 # Removing a shortcut
-$ rm ~/.go_shortcuts/os
+$ go --remove os
 ```
 
+There is also a `--list|-l` subcommand that allows you to view a list of your
+saved shortcuts:
+
+```
+$ go --list
+os -> /Users/Scott/Documents/CMU/F16/15410
+```
 
 ## Replacing `cd`
 
@@ -108,10 +133,14 @@ inside of such a forked process will not have an effect on the parent shell
 process. Functions, on the other hand, are run as part of the current process,
 hence `go` is defined as a function rather than a program.
 
-<a href="foot-1"><sup>2</sup></a> This means that if a symbolic link in the
+<a href="foot-2"><sup>2</sup></a> This means that if a symbolic link in the
 shortcut folder named `mylink` points to `/Users/Scott/Documents/Courses/15410`,
 `go mylink` changes the current directory to
 `/Users/Scott/Documents/Courses/15410` not `~/.go_shortcuts/mylink`. Going to
 the directory that the symbolic link points to, instead of setting the symbolic
 link to the current directory, keeps file paths cleaner.
 
+<a href="foot-3"><sup>3</sup></a> Note that `--add` and `-a`, `--remove` and
+`-r`, and `--list` and `-l`, are long- and short-hand forms of the same exact
+command. There is no functional difference between using the long or short form,
+it is a matter of personal preference.
