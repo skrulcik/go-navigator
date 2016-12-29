@@ -9,6 +9,35 @@
 # (c) Scott Krulcik 2017 MIT License
 #
 
+function _go_add_to_history() {
+    # Except one argument, which is the full path of the directory to be added
+
+    # Store a list of the most recent directories visited (using the go
+    # command)
+    HISTORY_FILE="$(dirname ~/.)/.go_history"
+    TMP_HISTORY_FILE=$HISTORY_FILE.tmp
+    # Only hold the last 100 directories
+    HISTORY_LIMIT=100
+    if [ ! -f $HISTORY_FILE ];
+    then
+        touch $HISTORY_FILE;
+        # Fill the history file with tildes, so there is an infinite history of
+        # the home directory.
+        printf '~\n%.0s' {1..$HISTORY_LIMIT} > $HISTORY_FILE
+    fi
+
+    lastDir=$(realpath $1);
+
+    # The new history is copied into the temporary file first, then the old
+    # information (with any potential duplicates removed) is appended to the
+    # temp file, up to the maximum history size. Finally, the temp file
+    # replaces the original history file, hopefully eliminating potential
+    # problems if the process is killed before the transfer is complete
+    echo $lastDir > $TMP_HISTORY_FILE;
+    cat $HISTORY_FILE | grep -iv $lastDir | head -n $HISTORY_LIMIT >> $TMP_HISTORY_FILE;
+    cp $TMP_HISTORY_FILE $HISTORY_FILE;
+}
+
 function go() {
 
     USAGE="Usage:
@@ -46,13 +75,13 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     SUCCESS=0;
 
     # Default shortcut location ("dirname ~/." gets absolute home path)
-    DEFAULT_GO_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
+    DEFAULT_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
 
     # Establish where to look for shortcuts
     if [ -z "$GO_SHORTCUT_DIR" ];
     then
         # Try the default go links directory
-        GO_SHORTCUT_DIR=$DEFAULT_GO_SHORTCUT_DIR;
+        GO_SHORTCUT_DIR=$DEFAULT_SHORTCUT_DIR;
         # The default go-links directory should exist if the environment
         # variable is not overridden
         mkdir -p $GO_SHORTCUT_DIR;
@@ -177,6 +206,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     if [ "$?" = "0" ];
     then
         # Regular cd succeeded, print location information then return success
+        _go_add_to_history `pwd`;
         pwd;
         ls;
         return $SUCCESS;
@@ -202,6 +232,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 # Linux, readlink does not
                 2>/dev/null cd `pwd -P`;
                 # Show the user where they are, and what files are available
+                _go_add_to_history `pwd`;
                 pwd;
                 ls;
                 # Return successfully
@@ -222,11 +253,31 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         # Continue to recent history method
     fi
 
-    ################################################################################
+    ############################################################################
     # Method 3: Recent History
-    ################################################################################
-
-    # TODO
+    ############################################################################
+    # Check the recent history of visited directories to check if and of them
+    # match the destination argument
+    shopt -s nocasematch
+    for oldDir in `cat $HISTORY_FILE`;
+    do
+        if [[ "$oldDir" == *"$1" ]]
+        then
+            if [ -d $oldDir ];
+            then
+                cd $oldDir;
+                # Still add the directory to history, to maintain LRU behavior
+                _go_add_to_history `pwd`;
+                pwd;
+                ls;
+                shopt -u nocasematch
+                return $SUCCESS;
+            else
+                >&2 echo "Warning: Directory $oldDir from navigation history matches \"$1\", but no longer exists.";
+            fi
+        fi
+    done
+    shopt -u nocasematch
 
     # All three methods failed failed :/
     >&2 echo "go: $@: Directory not found.";
