@@ -1,4 +1,4 @@
-# `go`
+# Smart Directory Navigation with `go`
 
 `go` is a smarter way to move between directories. Just type the name of the
 folder you want, and `go` will almost always bring your there, even if it has to
@@ -41,7 +41,7 @@ go [dest]
 go [-h,--help]
 go [-a,--add] linkname destpath
 go [-r,--remove] linkname
-go [-l,--list]";
+go [-l,--list]
 ```
 
 The `dest` given to `go` can be one of the following:
