@@ -9,14 +9,33 @@
 # (c) Scott Krulcik 2017 MIT License
 #
 
-GO_NAV_HISTORY_FILE="$(dirname ~/.)/.go_history"
+# Global variables for go-navigator files:
+# - GO_NAV_HISTORY_FILE - List of recently visited directories
+# - GO_NAV_TMP_FILE     - Swap space for manipulating other files
+# - GO_NAV_SHORTCUT_DIR - Directory holding symbolic links representing
+#                         shortcuts stored by the navigator
+if [ -z $GO_NAV_HISTORY_FILE ];
+then
+    export GO_NAV_HISTORY_FILE="$(dirname ~/.)/.go_nav_history"
+fi
+if [ -z $GO_NAV_TMP_FILE ];
+then
+    export GO_NAV_TMP_FILE="$(dirname ~/.)/.go_nav_tmp"
+fi
+if [ -z "$GO_NAV_SHORTCUT_DIR" ];
+then
+    # Try the default go links directory
+    GO_NAV_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
+    # The default go-links directory should exist if the environment
+    # variable is not overridden
+    mkdir -p $GO_NAV_SHORTCUT_DIR;
+    # Use the full path for the shortcut directory
+    export GO_NAV_SHORTCUT_DIR=$(dirname $GO_NAV_SHORTCUT_DIR/.);
+fi
 
 function _go_add_to_history() {
     # Except one argument, which is the full path of the directory to be added
 
-    # Store a list of the most recent directories visited (using the go
-    # command)
-    TMP_HISTORY_FILE=$GO_NAV_HISTORY_FILE.tmp
     # Only hold the last 100 directories
     HISTORY_LIMIT=100
     if [ ! -f $GO_NAV_HISTORY_FILE ];
@@ -31,9 +50,9 @@ function _go_add_to_history() {
     # temp file, up to the maximum history size. Finally, the temp file
     # replaces the original history file, hopefully eliminating potential
     # problems if the process is killed before the transfer is complete
-    echo $lastDir > $TMP_HISTORY_FILE;
-    cat $GO_NAV_HISTORY_FILE | grep -iv "^$lastDir\$" | head -n $HISTORY_LIMIT >> $TMP_HISTORY_FILE;
-    cp $TMP_HISTORY_FILE $GO_NAV_HISTORY_FILE;
+    echo $lastDir > $GO_NAV_TMP_FILE;
+    cat $GO_NAV_HISTORY_FILE | grep -iv "^$lastDir\$" | head -n $HISTORY_LIMIT >> $GO_NAV_TMP_FILE;
+    cp $GO_NAV_TMP_FILE $GO_NAV_HISTORY_FILE;
 }
 
 function go() {
@@ -47,7 +66,8 @@ function go() {
 
     HELP="
     [dest] can be empty, a relative or local path, a pre-defined shortcut in
-    $GO_SHORTCUT_DIR, or the name of a recently visited directory.
+    $GO_NAV_SHORTCUT_DIR, the name of a recently visited directory, or the name of
+    a directory close to the top level.
 
 --add or -a:
     Adds a new shortcut for the go command to follow.
@@ -76,20 +96,6 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     ERR=-1;
     SUCCESS=0;
 
-    # Default shortcut location ("dirname ~/." gets absolute home path)
-    DEFAULT_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
-
-    # Establish where to look for shortcuts
-    if [ -z "$GO_SHORTCUT_DIR" ];
-    then
-        # Try the default go links directory
-        GO_SHORTCUT_DIR=$DEFAULT_SHORTCUT_DIR;
-        # The default go-links directory should exist if the environment
-        # variable is not overridden
-        mkdir -p $GO_SHORTCUT_DIR;
-    fi
-    # Use the full path for the shortcut directory
-    GO_SHORTCUT_DIR=$(dirname $GO_SHORTCUT_DIR/.);
 
     ############################################################################
     # Argument parsing, --help, --add and --delete options
@@ -132,7 +138,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
 
             # Combine the shortcut name given in the argument with the shortcut
             # directory to gets its full path
-            shortname="$GO_SHORTCUT_DIR/$2";
+            shortname="$GO_NAV_SHORTCUT_DIR/$2";
             # Store the full path of the directory for symbolic linking
             dirpath=$(realpath $3);
 
@@ -171,14 +177,14 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 return $ERR;
             fi
 
-            if [ ! -L $GO_SHORTCUT_DIR/$2 ];
+            if [ ! -L $GO_NAV_SHORTCUT_DIR/$2 ];
             then
                 >&2 echo "Error: $2 is not an existing shortcut.";
-                >&2 echo "Error: $GO_SHORTCUT_DIR/$2 is not an existing shortcut.";
+                >&2 echo "Error: $GO_NAV_SHORTCUT_DIR/$2 is not an existing shortcut.";
                 return $ERR;
             fi
 
-            rm $GO_SHORTCUT_DIR/$2
+            rm $GO_NAV_SHORTCUT_DIR/$2
             if [ "$?" = "0" ];
             then
                 echo "Removed shortcut $2";
@@ -200,9 +206,9 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             fi
 
             echo "Shortcuts:";
-            if [ -d $GO_SHORTCUT_DIR ];
+            if [ -d $GO_NAV_SHORTCUT_DIR ];
             then
-                for link in $GO_SHORTCUT_DIR/*;
+                for link in $GO_NAV_SHORTCUT_DIR/*;
                 do
                     echo "    $(basename $link) -> $(readlink $link)";
                 done
@@ -254,10 +260,10 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     ############################################################################
     # If the shortcut directory exists, check to see if the argument matches
     # any shortcuts
-    if [ -d $GO_SHORTCUT_DIR ];
+    if [ -d $GO_NAV_SHORTCUT_DIR ];
     then
         # $1 exists, otherwise cd would not have failed
-        dest="$GO_SHORTCUT_DIR/$1"
+        dest="$GO_NAV_SHORTCUT_DIR/$1"
         if [ -L $dest ];
         then
             # Follow the symlink, but check the result because the link itself
@@ -286,7 +292,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         fi
     else
         # Print a warning message that the go-links directory does not exist
-        >&2 echo "Warning: Could not locate shortcut directory $GO_SHORTCUT_DIR"
+        >&2 echo "Warning: Could not locate shortcut directory $GO_NAV_SHORTCUT_DIR"
         # Continue to recent history method
     fi
 
@@ -319,6 +325,23 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         done
         shopt -u nocasematch
     fi
+
+    ############################################################################
+    # Method 4: Top-level directories
+    ############################################################################
+    # Iteratively search at deeper depths from hom to find the desired directory
+    for depth in {1..4};
+    do
+        match=$(2>/dev/null find $HOME -type d -maxdepth $depth -name "$@" | head -n 1);
+        if [ -n "$match" ];
+        then
+            cd $match;
+            _go_add_to_history `pwd`;
+            pwd;
+            ls;
+            return $SUCCESS;
+        fi
+    done
 
     # All three methods failed failed :/
     >&2 echo "go: $@: Directory not found.";
