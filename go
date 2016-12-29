@@ -9,21 +9,19 @@
 # (c) Scott Krulcik 2017 MIT License
 #
 
+GO_NAV_HISTORY_FILE="$(dirname ~/.)/.go_history"
+
 function _go_add_to_history() {
     # Except one argument, which is the full path of the directory to be added
 
     # Store a list of the most recent directories visited (using the go
     # command)
-    HISTORY_FILE="$(dirname ~/.)/.go_history"
-    TMP_HISTORY_FILE=$HISTORY_FILE.tmp
+    TMP_HISTORY_FILE=$GO_NAV_HISTORY_FILE.tmp
     # Only hold the last 100 directories
     HISTORY_LIMIT=100
-    if [ ! -f $HISTORY_FILE ];
+    if [ ! -f $GO_NAV_HISTORY_FILE ];
     then
-        touch $HISTORY_FILE;
-        # Fill the history file with tildes, so there is an infinite history of
-        # the home directory.
-        printf '~\n%.0s' {1..$HISTORY_LIMIT} > $HISTORY_FILE
+        touch $GO_NAV_HISTORY_FILE;
     fi
 
     lastDir=$(realpath $1);
@@ -34,8 +32,8 @@ function _go_add_to_history() {
     # replaces the original history file, hopefully eliminating potential
     # problems if the process is killed before the transfer is complete
     echo $lastDir > $TMP_HISTORY_FILE;
-    cat $HISTORY_FILE | grep -iv $lastDir | head -n $HISTORY_LIMIT >> $TMP_HISTORY_FILE;
-    cp $TMP_HISTORY_FILE $HISTORY_FILE;
+    cat $GO_NAV_HISTORY_FILE | grep -iv "^$lastDir\$" | head -n $HISTORY_LIMIT >> $TMP_HISTORY_FILE;
+    cp $TMP_HISTORY_FILE $GO_NAV_HISTORY_FILE;
 }
 
 function go() {
@@ -44,7 +42,8 @@ function go() {
     go [dest]
     go [-h,--help]
     go [-a,--add] linkname destpath
-    go [-r,--remove] linkname";
+    go [-r,--remove] linkname
+    go [-l,--list]";
 
     HELP="
     [dest] can be empty, a relative or local path, a pre-defined shortcut in
@@ -64,6 +63,9 @@ function go() {
     Removes a shortcut from the go command's list.
 
     linkname - The name of an existing shortcut.
+
+--list or -l:
+    Lists all existing shortcuts stored by the go command.
 
 More information can be found at https://github.com/skrulcik/go-navigator"
 
@@ -186,6 +188,41 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             >&2 echo "Error removing symbolic link for shortcut $2";
             return $ERR;
         ;;
+        ########################################################################
+        # List option - List all shortcuts
+        ########################################################################
+        "--list" | "-l")
+            if [ $# != 1 ];
+            then
+                >&2 echo "Error: expected 0 arguments to follow $1.";
+                >&2 echo "$USAGE";
+                return $ERR;
+            fi
+
+            echo "Shortcuts:";
+            if [ -d $GO_SHORTCUT_DIR ];
+            then
+                for link in $GO_SHORTCUT_DIR/*;
+                do
+                    echo "    $(basename $link) -> $(readlink $link)";
+                done
+            fi
+
+            # Spacing
+            echo "";
+
+            echo "Recent directories:";
+            if [ -e $GO_NAV_HISTORY_FILE ];
+            then
+                for recent in `head -n 10 $GO_NAV_HISTORY_FILE`;
+                do
+                    echo "    $recent";
+                done
+            else
+                echo "    No history file found.";
+            fi
+            return $SUCCESS;
+        ;;
         esac
 
         # If no options are given, there should not be more than one argument
@@ -258,26 +295,30 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     ############################################################################
     # Check the recent history of visited directories to check if and of them
     # match the destination argument
-    shopt -s nocasematch
-    for oldDir in `cat $HISTORY_FILE`;
-    do
-        if [[ "$oldDir" == *"$1" ]]
-        then
-            if [ -d $oldDir ];
+    if [ -f $GO_NAV_HISTORY_FILE ];
+    then
+        shopt -s nocasematch
+        for oldDir in `cat $GO_NAV_HISTORY_FILE`;
+        do
+            if [[ "$oldDir" == *"$1" ]]
             then
-                cd $oldDir;
-                # Still add the directory to history, to maintain LRU behavior
-                _go_add_to_history `pwd`;
-                pwd;
-                ls;
-                shopt -u nocasematch
-                return $SUCCESS;
-            else
-                >&2 echo "Warning: Directory $oldDir from navigation history matches \"$1\", but no longer exists.";
+                if [ -d $oldDir ];
+                then
+                    cd $oldDir;
+                    # Still add the directory to history, to maintain LRU
+                    # behavior
+                    _go_add_to_history `pwd`;
+                    pwd;
+                    ls;
+                    shopt -u nocasematch
+                    return $SUCCESS;
+                else
+                    >&2 echo "Warning: Directory $oldDir from navigation history matches \"$1\", but no longer exists.";
+                fi
             fi
-        fi
-    done
-    shopt -u nocasematch
+        done
+        shopt -u nocasematch
+    fi
 
     # All three methods failed failed :/
     >&2 echo "go: $@: Directory not found.";
