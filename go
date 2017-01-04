@@ -130,7 +130,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             fi
 
             # Validate that the directory exists
-            if [ ! -d $3 ];
+            if [ ! -d "$3" ];
             then
                 echo "Shortcut could not be created. Directory $dirpath does not exist.";
                 return $ERR;
@@ -143,9 +143,9 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             dirpath=$(realpath $3);
 
             # Validate that the shortcut name is not taken
-            if [ -e $shortname ];
+            if [ -e "$shortname" ];
             then
-                if [ -L $shortname ];
+                if [ -L "$shortname" ];
                 then
                     # shortcut exists, but can be overridden, so print warning and continue
                     >&2 echo "Warning: Overriding shortcut to $(cd $shortname; pwd)"
@@ -157,7 +157,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
 
             # At this point, shortname is a valid shortcut name, and dirpath is
             # a valid directory to link to
-            ln -s $dirpath $shortname;
+            ln -s "$dirpath" "$shortname";
             if [ "$?" = "0" ];
             then
                 echo "Created shortcut \"$2\" to $dirpath";
@@ -249,7 +249,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     if [ "$?" = "0" ];
     then
         # Regular cd succeeded, print location information then return success
-        _go_add_to_history `pwd`;
+        _go_add_to_history "$(pwd)";
         pwd;
         ls;
         return $SUCCESS;
@@ -268,14 +268,14 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         then
             # Follow the symlink, but check the result because the link itself
             # could be broken
-            2>/dev/null cd $dest;
+            2>/dev/null cd "$dest";
             if [ "$?" = "0" ];
             then
                 # Go to the absolute path location (pwd -P works on Mac and
                 # Linux, readlink does not
-                2>/dev/null cd `pwd -P`;
+                2>/dev/null cd "$(pwd -P)";
                 # Show the user where they are, and what files are available
-                _go_add_to_history `pwd`;
+                _go_add_to_history "$(pwd)";
                 pwd;
                 ls;
                 # Return successfully
@@ -310,10 +310,10 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             then
                 if [ -d $oldDir ];
                 then
-                    cd $oldDir;
+                    cd "$oldDir";
                     # Still add the directory to history, to maintain LRU
                     # behavior
-                    _go_add_to_history `pwd`;
+                    _go_add_to_history "$(pwd)";
                     pwd;
                     ls;
                     shopt -u nocasematch
@@ -335,8 +335,8 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         match=$(2>/dev/null find $HOME -type d -maxdepth $depth -name "$@" | head -n 1);
         if [ -n "$match" ];
         then
-            cd $match;
-            _go_add_to_history `pwd`;
+            cd "$match";
+            _go_add_to_history "$(pwd)";
             pwd;
             ls;
             return $SUCCESS;
