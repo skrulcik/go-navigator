@@ -14,11 +14,11 @@
 # - GO_NAV_TMP_FILE     - Swap space for manipulating other files
 # - GO_NAV_SHORTCUT_DIR - Directory holding symbolic links representing
 #                         shortcuts stored by the navigator
-if [ -z $GO_NAV_HISTORY_FILE ];
+if [ -z "$GO_NAV_HISTORY_FILE" ];
 then
     export GO_NAV_HISTORY_FILE="$(dirname ~/.)/.go_nav_history"
 fi
-if [ -z $GO_NAV_TMP_FILE ];
+if [ -z "$GO_NAV_TMP_FILE" ];
 then
     export GO_NAV_TMP_FILE="$(dirname ~/.)/.go_nav_tmp"
 fi
@@ -28,9 +28,9 @@ then
     GO_NAV_SHORTCUT_DIR="$(dirname ~/.)/.go_shortcuts";
     # The default go-links directory should exist if the environment
     # variable is not overridden
-    mkdir -p $GO_NAV_SHORTCUT_DIR;
+    mkdir -p "$GO_NAV_SHORTCUT_DIR";
     # Use the full path for the shortcut directory
-    export GO_NAV_SHORTCUT_DIR=$(dirname $GO_NAV_SHORTCUT_DIR/.);
+    export GO_NAV_SHORTCUT_DIR="$(dirname "$GO_NAV_SHORTCUT_DIR/.")";
 fi
 
 function _go_add_to_history() {
@@ -38,21 +38,21 @@ function _go_add_to_history() {
 
     # Only hold the last 100 directories
     HISTORY_LIMIT=100
-    if [ ! -f $GO_NAV_HISTORY_FILE ];
+    if [ ! -f "$GO_NAV_HISTORY_FILE" ];
     then
-        touch $GO_NAV_HISTORY_FILE;
+        touch "$GO_NAV_HISTORY_FILE";
     fi
 
-    lastDir=$(realpath $1);
+    lastDir="$(realpath "$1")";
 
     # The new history is copied into the temporary file first, then the old
     # information (with any potential duplicates removed) is appended to the
     # temp file, up to the maximum history size. Finally, the temp file
     # replaces the original history file, hopefully eliminating potential
     # problems if the process is killed before the transfer is complete
-    echo $lastDir > $GO_NAV_TMP_FILE;
-    cat $GO_NAV_HISTORY_FILE | grep -iv "^$lastDir\$" | head -n $HISTORY_LIMIT >> $GO_NAV_TMP_FILE;
-    cp $GO_NAV_TMP_FILE $GO_NAV_HISTORY_FILE;
+    echo "$lastDir" > "$GO_NAV_TMP_FILE";
+    cat "$GO_NAV_HISTORY_FILE" | grep -iv "^$lastDir\$" | head -n $HISTORY_LIMIT >> "$GO_NAV_TMP_FILE";
+    cp "$GO_NAV_TMP_FILE" "$GO_NAV_HISTORY_FILE";
 }
 
 function go() {
@@ -140,7 +140,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             # directory to gets its full path
             shortname="$GO_NAV_SHORTCUT_DIR/$2";
             # Store the full path of the directory for symbolic linking
-            dirpath=$(realpath $3);
+            dirpath="$(realpath "$3")";
 
             # Validate that the shortcut name is not taken
             if [ -e "$shortname" ];
@@ -148,7 +148,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 if [ -L "$shortname" ];
                 then
                     # shortcut exists, but can be overridden, so print warning and continue
-                    >&2 echo "Warning: Overriding shortcut to $(cd $shortname; pwd)"
+                    >&2 echo "Warning: Overriding shortcut to $(cd "$shortname"; pwd)"
                 else
                     echo "Shortcut could not be created. $shortname exists and is not a symbolic link.";
                     return $ERR;
@@ -177,14 +177,14 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 return $ERR;
             fi
 
-            if [ ! -L $GO_NAV_SHORTCUT_DIR/$2 ];
+            if [ ! -L "$GO_NAV_SHORTCUT_DIR/$2" ];
             then
                 >&2 echo "Error: $2 is not an existing shortcut.";
                 >&2 echo "Error: $GO_NAV_SHORTCUT_DIR/$2 is not an existing shortcut.";
                 return $ERR;
             fi
 
-            rm $GO_NAV_SHORTCUT_DIR/$2
+            rm "$GO_NAV_SHORTCUT_DIR/$2"
             if [ "$?" = "0" ];
             then
                 echo "Removed shortcut $2";
@@ -206,11 +206,11 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             fi
 
             echo "Shortcuts:";
-            if [ -d $GO_NAV_SHORTCUT_DIR ];
+            if [ -d "$GO_NAV_SHORTCUT_DIR" ];
             then
-                for link in $GO_NAV_SHORTCUT_DIR/*;
+                for link in "$GO_NAV_SHORTCUT_DIR"/*;
                 do
-                    echo "    $(basename $link) -> $(readlink $link)";
+                    echo "    $(basename "$link") -> $(readlink "$link")";
                 done
             fi
 
@@ -218,9 +218,9 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             echo "";
 
             echo "Recent directories:";
-            if [ -e $GO_NAV_HISTORY_FILE ];
+            if [ -e "$GO_NAV_HISTORY_FILE" ];
             then
-                for recent in `head -n 10 $GO_NAV_HISTORY_FILE`;
+                for recent in "$(head -n 10 "$GO_NAV_HISTORY_FILE")";
                 do
                     echo "    $recent";
                 done
@@ -260,11 +260,11 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     ############################################################################
     # If the shortcut directory exists, check to see if the argument matches
     # any shortcuts
-    if [ -d $GO_NAV_SHORTCUT_DIR ];
+    if [ -d "$GO_NAV_SHORTCUT_DIR" ];
     then
         # $1 exists, otherwise cd would not have failed
         dest="$GO_NAV_SHORTCUT_DIR/$1"
-        if [ -L $dest ];
+        if [ -L "$dest" ];
         then
             # Follow the symlink, but check the result because the link itself
             # could be broken
@@ -284,7 +284,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 # Symbolic link is broken, delete it so we don't accumulate dead
                 # links
                 >&2 echo "Warning: Deleting broken symlink $dest";
-                rm $dest;
+                rm "$dest";
                 # Exit with an error code, if there is a cache hit in recent
                 # history it would probably be for the broken link
                 return $ERR;
@@ -301,14 +301,14 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     ############################################################################
     # Check the recent history of visited directories to check if and of them
     # match the destination argument
-    if [ -f $GO_NAV_HISTORY_FILE ];
+    if [ -f "$GO_NAV_HISTORY_FILE" ];
     then
         shopt -s nocasematch
-        for oldDir in `cat $GO_NAV_HISTORY_FILE`;
+        while read oldDir
         do
             if [[ "$oldDir" == *"$1" ]]
             then
-                if [ -d $oldDir ];
+                if [ -d "$oldDir" ];
                 then
                     cd "$oldDir";
                     # Still add the directory to history, to maintain LRU
@@ -319,10 +319,10 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                     shopt -u nocasematch
                     return $SUCCESS;
                 else
-                    >&2 echo "Warning: Directory $oldDir from navigation history matches \"$1\", but no longer exists.";
+                    >&2 echo "Warning: Directory '$oldDir' from navigation history matches '$1', but no longer exists.";
                 fi
-            fi
-        done
+             fi
+        done < "$GO_NAV_HISTORY_FILE"
         shopt -u nocasematch
     fi
 
@@ -332,7 +332,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     # Iteratively search at deeper depths from hom to find the desired directory
     for depth in {1..4};
     do
-        match=$(2>/dev/null find $HOME -type d -maxdepth $depth -name "$@" | head -n 1);
+        match=$(2>/dev/null find "$HOME" -type d -maxdepth $depth -name "$@" | head -n 1);
         if [ -n "$match" ];
         then
             cd "$match";
