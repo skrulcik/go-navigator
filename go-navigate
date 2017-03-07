@@ -1,6 +1,8 @@
 #!/bin/bash
 #
-# go - A faster way to change directories.
+# go-navigate
+#
+# Navigate to directories using only their basename.
 #
 # The go command must be implemented as a function, rather than a normal executable
 #
@@ -55,7 +57,7 @@ function _go_add_to_history() {
     cp "$GO_NAV_TMP_FILE" "$GO_NAV_HISTORY_FILE";
 }
 
-function go() {
+function go-navigate() {
 
     USAGE="Usage:
     go [dest]
