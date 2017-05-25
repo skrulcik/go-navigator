@@ -60,11 +60,11 @@ function _go_add_to_history() {
 function go-navigate() {
 
     USAGE="Usage:
-    go [dest]
-    go [-h,--help]
-    go [-a,--add] linkname destpath
-    go [-r,--remove] linkname
-    go [-l,--list]";
+    gn [dest]
+    gn [-h,--help]
+    gn [-a,--add] linkname destpath
+    gn [-r,--remove] linkname
+    gn [-l,--list]";
 
     HELP="
     [dest] can be empty, a relative or local path, a pre-defined shortcut in
@@ -72,7 +72,7 @@ function go-navigate() {
     a directory close to the top level.
 
 --add or -a:
-    Adds a new shortcut for the go command to follow.
+    Adds a new shortcut for the gn command to follow.
 
     linkname - An alphanumeric name for the shortcut. This should be a name
                that is short and easy to type. Adding a new shortcut with the
@@ -82,12 +82,12 @@ function go-navigate() {
     destpath - The path to the shortcut destination.
 
 --remove or -r:
-    Removes a shortcut from the go command's list.
+    Removes a shortcut from the gn command's list.
 
     linkname - The name of an existing shortcut.
 
 --list or -l:
-    Lists all existing shortcuts stored by the go command.
+    Lists all existing shortcuts stored by the gn command.
 
 More information can be found at https://github.com/skrulcik/go-navigator"
 
@@ -234,7 +234,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
         esac
 
         # If no options are given, there should not be more than one argument
-        # passed to the go function
+        # passed to the gn function
         if [[ $# > 1 ]];
         then
             >&2 echo "$USAGE";
@@ -346,7 +346,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
     done
 
     # All three methods failed failed :/
-    >&2 echo "go: $@: Directory not found.";
+    >&2 echo "gn: $@: Directory not found.";
     return $ERR;
 }
 

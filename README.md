@@ -1,29 +1,29 @@
-# Smart Directory Navigation with `go`
+# Smart Directory Navigation with `go-navigate`
 
 The `go-navigate` command is a smarter way to move between directories. Just
 type the base-name of the folder you want, and `go-navigate` will almost always
-bring you there, even if it has to jump across the file tree. When combined
-with a short alias, it makes changing directories effortless -- I rarely find
-the need to type more than a basename.
+bring you there, even if it has to jump across the file tree. When combined with
+a short alias, it makes changing directories effortless -- I rarely find the
+need to type more than a basename.
 
 The four different methods that `go-navigate` uses to determine a destination
 directory, are, in order of preference:
 
-1. `cd` - If it is possible to `cd` into the supplied relative path,
-   `go-navigator` will perform the `cd` operation. This means you can start
-   using `go-navigator` as a simple drop in for `cd` and it will do the right
-   thing.
-2. Shortcuts - Custom shortcuts (symbolic links) stored in the ~/.go_links
-   allow you to navigate to tricky places with minimal keystrokes.
-3. Most Recent - Navigate to the most recently visited directory with the same
-   base name as the one given. This acts as a cache, making it extremely
-   efficient to access your most frequently used directories.
-4. Depth-limited Search [Experimental] - Search through top-level directories
-   starting from the home folder, and continuing at folder depths of 1-4. This
-   is a very slow search method, but will find almost any folder. Once the
-   folder is found, it will be added to the history, making future accesses
-   faster. _Feedback on the usefulness of this feature, compared to its slow
-   speed, is appreciated._
+1.  `cd` - If it is possible to `cd` into the supplied relative path,
+    `go-navigator` will perform the `cd` operation. This means you can start
+    using `go-navigator` as a simple drop in for `cd` and it will do the right
+    thing.
+2.  Shortcuts - Custom shortcuts (symbolic links) stored in the ~/.go_links
+    allow you to navigate to tricky places with minimal keystrokes.
+3.  Most Recent - Navigate to the most recently visited directory with the same
+    base name as the one given. This acts as a cache, making it extremely
+    efficient to access your most frequently used directories.
+4.  Depth-limited Search [Experimental] - Search through top-level directories
+    starting from the home folder, and continuing at folder depths of 1-4. This
+    is a very slow search method, but will find almost any folder. Once the
+    folder is found, it will be added to the history, making future accesses
+    faster. _Feedback on the usefulness of this feature, compared to its slow
+    speed, is appreciated._
 
 ## Installation
 
@@ -31,9 +31,9 @@ Since `go-navigate` changes the current directory, it must be run as a bash
 _function_, not as a bash program<a href="foot-1"><sup>1</sup></a>. This means
 that rather than adding the executable to your path, you must define the
 `go-navigate` function. This needs to occur in your `.bashrc`,`.bash_profile`,
-`.profile`, or whatever other login file you choose to use. For most people,
-the following command will make sure the function is loaded when you log in to
-your terminal:
+`.profile`, or whatever other login file you choose to use. For most people, the
+following command will make sure the function is loaded when you log in to your
+terminal:
 
 ```bash
 echo ". $(pwd)/go-navigate" >> ~/.bashrc
@@ -51,15 +51,17 @@ go-navigate [-l,--list]
 
 The `dest` given to `go-navigate` can be one of the following:
 
-1. Nothing
+1.  Nothing
 
     If no destination is given, `go-navigate` changes the current directory to
     the home directory (same as `cd`).
-2. Pathname
 
-    Both relative and absolute pathnames are accepted by `go-navigate`, and will be
-    navigated to the same way that `cd` navigates to them.
-3. Shortcut
+2.  Pathname
+
+    Both relative and absolute pathnames are accepted by `go-navigate`, and will
+    be navigated to the same way that `cd` navigates to them.
+
+3.  Shortcut
 
     If a name does not resolve to an absolute or relative path, `go-navigate`
     will check if the name matches a shortcut. If a matching shortcut is found,
@@ -68,7 +70,8 @@ The `dest` given to `go-navigate` can be one of the following:
 
     If a shortcut is found, but the link is broken, the shortcut will be deleted
     to avoid future false positives.
-4. Folder Base Name
+
+4.  Folder Base Name
 
     When a name that cannot be evaluated as a relative path, absolute path, or
     shortcut is given, `go-navigate` will attempt to find a directory with the
@@ -90,10 +93,11 @@ $ go notes # Goes to ~/Documents/CMU/F16/15410/notes
 
 ## Shortcut Management
 
-Shortcuts are stored in the form of [symbolic links](https://en.wikipedia.org/wiki/Symbolic_link#POSIX_and_Unix-like_operating_systems).
+Shortcuts are stored in the form of [symbolic
+links](https://en.wikipedia.org/wiki/Symbolic_link#POSIX_and_Unix-like_operating_systems).
 For now, `go-navigate` only looks for shortcuts in one directory. By default
-this directory is `~/.go_shortcuts`, but it can be set by exporting a new
-global `GO_SHORTCUT_DIR` in your `.bashrc` (or similar login file).
+this directory is `~/.go_shortcuts`, but it can be set by exporting a new global
+`GO_SHORTCUT_DIR` in your `.bashrc` (or similar login file).
 
 To save you from having to manipulate these directories yourself, `go-navigate`
 has `--add|-a` and `--remove|-r` subcommands to add and remove shortcuts,
@@ -130,12 +134,11 @@ If you do not use the [Go Language](https://golang.org), creating an alias `go`
 for `go-navigator` convenient. `gn`, `gd` or the more verbose `goto` are also
 good aliases. You can define them in your `.bashrc` like so:
 
-
 ```
 alias gn='go-navigate'
 ```
 
----
+--------------------------------------------------------------------------------
 
 <a href="foot-1"><sup>1</sup></a> Typical command line programs execute in their
 own process (forked from the main shell process). Executing a `cd` command
