@@ -207,6 +207,7 @@ More information can be found at https://github.com/skrulcik/go-navigator"
                 return $ERR;
             fi
 
+            # List all saved shortcuts
             echo "Shortcuts:";
             if [ -d "$GO_NAV_SHORTCUT_DIR" ];
             then
@@ -219,11 +220,13 @@ More information can be found at https://github.com/skrulcik/go-navigator"
             # Spacing
             echo "";
 
+            # List the 10 most recent directories visited (the whole list is
+            # excessive)
             echo "Recent directories:";
             if [ -e "$GO_NAV_HISTORY_FILE" ];
             then
-                for recent in "$(head -n 10 "$GO_NAV_HISTORY_FILE")";
-                do
+                head -n 10 "$GO_NAV_HISTORY_FILE" |
+                while read recent; do
                     echo "    $recent";
                 done
             else
